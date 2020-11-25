@@ -35,3 +35,88 @@ x_vec = rnorm(30,mean=5, sd=3)
 
 (x_vec - mean(x_vec))/sd(x_vec)
 ```
+
+function to compute z-scores
+***x= x_vec
+```{r}
+z_scores = function (x) {
+  if (!is.numeric(x)) {
+    stop("Input must be numeric")
+  }
+  if (length(x) < 3) {
+    stop("Input must have at least 3 numbers")
+  }
+z = (x-mean(x))/sd(x)
+return (z)
+}
+
+z_scores(x_vec)
+```
+Try my function on some other things, which should give errors
+
+```{r, error = True}
+z_scores(3)
+z_scores(c(True, True, False, True))
+z_scores(mtcars)
+```
+
+### Multiple outputs
+```{r}
+mean_and_sd = function (x) {
+  if (!is.numeric(x)) {
+    stop("Input must be numeric")
+  }
+  if (length(x) < 3) {
+    stop("Input must have at least 3 numbers")
+  }
+  mean_x = mean(x)
+  sd_x = sd(x)
+#make list into a df:
+  tibble (
+    mean = mean_x,
+    sd= sd_x
+)
+}
+```
+
+check that the function works.
+
+```{r}
+x_vec = rnorm(1000,mean =3, sd=4)
+mean_and_sd(x_vec)
+```
+
+### Multiple inputs= 
+
+create below with a function
+```{r}
+sim_data =
+  tibble (
+    x= rnorm(n=100, mean = 4, sd=3)
+  )
+#created a tibble
+sim_data %>%
+  summarize(
+    mean = mean(x),
+    sd = (x)
+  )
+#cal mean and sd to produce a result
+```
+````{r}
+#parameters to generate function
+sim_mean_sd = function(samp_size, mu, sigma) {
+
+  sim_data =
+  tibble (
+    x= rnorm(n=samp_size, mean = mu, sd=sigma)
+  )
+#created a tibble
+  sim_data %>%
+    summarize(
+      mean = mean(x),
+      sd = (x)
+  )
+}
+
+sim_mean_sd(100, 6, 3)
+```

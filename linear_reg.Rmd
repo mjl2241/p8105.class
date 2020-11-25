@@ -1,0 +1,100 @@
+---
+title: "Linear Regression"
+output: github_document
+---
+
+```{r setup, include=FALSE}
+library(tidyverse)
+library (patchwork)
+library(readr)
+library(broom)
+library(viridis)
+library(p8105.datasets)
+
+knitr::opts_chunk$set(
+	echo = TRUE,
+	warning = FALSE,
+	fig.width = 8, 
+  fig.height = 6,
+  out.width = "90%"
+)
+
+options(
+  ggplot2.continuous.colour = "viridis",
+  ggplot2.continuous.fill = "viridis"
+)
+
+scale_colour_discrete = scale_colour_viridis_d
+scale_fill_discrete = scale_fill_viridis_d
+
+theme_set(theme_minimal() + theme(legend.position = "bottom"))
+
+set.seed(1)
+```
+
+``` {r}
+data("nyc_airbnb")
+
+nyc_airbnb = 
+  nyc_airbnb %>%
+  mutate(stars = review_scores_location/2) %>%
+  rename (
+    borough = neighbourhood_group,
+    neighborhood = neighbourhood) %>%
+  filter(borough !="Staten Island") %>%
+  select(price, stars, borough, neighborhood, room_type)
+```
+
+## fit a model
+```{r}
+nyc_airbnb %>%
+  ggplot(aes(x=stars, y =price, color = borough)) +
+  geom_point()
+```
+fit the model we care about:
+```{r, include =FALSE}
+fit = lm(price ~ stars +borough, data= nyc_airbnb)
+fit
+summary(fit)
+summary(fit)$coef
+fitted.values(fit)
+residuals(fit)
+```
+let's look at the results better using broom
+*Bronx as the reference group
+```{r}
+broom::glance(fit)
+#dataframe of coefficients
+broom::tidy(fit) %>%
+  select(-std.error, -statistic) %>%
+  mutate(
+    term = str_replace(term,"borough", "Borough: ") #change from borough to capital Borough:
+  ) %>%
+  knitr :: kable(digits =3)
+```
+
+## Be in control of factors
+changing the reference group to Manhattan (the one with the most common airbnb units)
+```{r}
+nyc_airbnb =
+  nyc_airbnb %>%
+  mutate(
+    borough = fct_infreq(borough), #factor in order of frequency of borough
+    room_type= fct_infreq(room_type) #frequency of roomtype
+)
+```
+and the plot again
+```{r}
+nyc_airbnb %>%
+  ggplot(aes(x=stars, y =price, color = borough)) +
+  geom_point()
+
+fit = lm(price ~ stars +borough, data= nyc_airbnb)
+
+broom::tidy(fit)
+broom::glance(fit)
+```
+
+
+
+
