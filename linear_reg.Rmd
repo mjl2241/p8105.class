@@ -1,6 +1,8 @@
 ---
 title: "Linear Regression"
 output: github_document
+editor_options: 
+  chunk_output_type: console
 ---
 
 ```{r setup, include=FALSE}
@@ -10,6 +12,7 @@ library(readr)
 library(broom)
 library(viridis)
 library(p8105.datasets)
+library(dplyr)
 
 knitr::opts_chunk$set(
 	echo = TRUE,
@@ -126,8 +129,52 @@ fit_alt = lm(price ~stars + borough, data=nyc_airbnb)
 anova(fit_null,fit_alt) %>%
   broom::tidy()
 ```
+#nest data, fit models
+This is pretty formal and also complex: 
 
+```{r}
+#fit with interactions: 
+  fit = lm(price ~ stars * borough + room_type * borough, data= nyc_airbnb)
+  broom::tidy() 
+```
 
+This is more exploratory but maybe easier to understand:
+```{r}
+nyc_airbnb %>%
+  nest(data = -borough) %>% #just the boroughs
+  mutate(
+    models = map(.x= data, ~lm(price~stars+ room_type, data = .x)), #creates a list
+    results = map(models, broom::tidy) #creates a tibble 2X5
+  ) %>%
+  select(-data, -models) %>%
+  unnest(results) %>%
+  filter(term != "(Intercept)")  %>%
+  select(borough, term, estimate) %>%
+  pivot_wider(
+    names_from = borough,
+    values_from = estimate
+  )
+```
 
-
+let's next even more....
+RQ: room type and stars, adjusting for neighborhoods in manhattan
+```{r}
+nyc_airbnb %>%
+  filter(borough == "Manhattan") %>%
+  nest(data = -neighborhood) %>%
+mutate(
+    models = map(.x= data, ~lm(price~stars+ room_type, data = .x)), #creates a list
+    results = map(models, broom::tidy) #creates a tibble 2X5
+  ) %>%
+  select(-data, -models) %>%
+  unnest(results) %>%
+#As stars increase, battery park city increase and chinatown and chelsea decrease
+  filter(str_detect(term,"room_type")) %>%
+#what about coefficient for room type for each neighborhood, get rid of everything but room type
+  ggplot(aes(x=neighborhood, y=estimate)) +
+  geom_point() +
+  facet_wrap(. ~term) + #facet everything expect for term 
+#rotate x-axis label
+  theme(axis.text.x = element_text(angle=70, vjust = 0.5, hjust=1))
+```
 
